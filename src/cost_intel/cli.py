@@ -1,9 +1,15 @@
 """Cost Intelligence CLI — AI spending tracker with cost-quality correlation."""
 
+import json
+from pathlib import Path
+from typing import Optional
+
 import typer
 from rich.console import Console
+from rich.table import Table
 
 from cost_intel import __version__
+from cost_intel.duration import parse_window
 
 app = typer.Typer(help="Cost Intelligence — AI spending tracker")
 console = Console()
@@ -53,15 +59,15 @@ def record(
     output_tokens: int = typer.Option(
         ..., "--output-tokens", "-o", help="Output tokens"
     ),
-    label: str = typer.Option(None, "--label", "-l", help="Human label"),
+    label: Optional[str] = typer.Option(None, "--label", "-l", help="Human label"),
     cache_read_tokens: int = typer.Option(
         0, "--cache-read-tokens", help="Cache read tokens"
     ),
     cache_write_tokens: int = typer.Option(
         0, "--cache-write-tokens", help="Cache write tokens"
     ),
-    latency_ms: int = typer.Option(None, "--latency-ms", help="Latency ms"),
-    provider: str = typer.Option(None, "--provider", help="Provider name"),
+    latency_ms: Optional[int] = typer.Option(None, "--latency-ms", help="Latency ms"),
+    provider: Optional[str] = typer.Option(None, "--provider", help="Provider name"),
     run_type: str = typer.Option("api_call", "--run-type", help="Run type"),
 ) -> None:
     """Record a cost run."""
@@ -79,6 +85,150 @@ def record(
         cache_write_tokens=cache_write_tokens,
     )
     console.print(f"[green]✓[/green] Recorded run [bold]{run_id}[/bold]")
+
+
+# --- report command ---
+
+
+@app.command()
+def report(
+    by_model: bool = typer.Option(False, "--by-model", help="Group by model"),
+    by_label: bool = typer.Option(False, "--by-label", help="Group by label"),
+    by_day: bool = typer.Option(False, "--by-day", help="Group by day"),
+    last: Optional[str] = typer.Option(
+        None, "--last", "-l", help="Time window (e.g., 7d, 30d, 1w)"
+    ),
+) -> None:
+    """Show cost report."""
+    from cost_intel.report import (
+        report_by_day,
+        report_by_label,
+        report_by_model,
+        report_summary,
+    )
+
+    days = parse_window(last) if last else None
+
+    # Show summary first
+    summary = report_summary(days=days)
+    console.print(f"\n[bold]Cost Report[/bold] (last {last or 'all time'})")
+    console.print(
+        f"  Runs: [bold]{summary.get('total_runs', 0)}[/bold]  "
+        f"Cost: [bold]${summary.get('total_cost', 0):.4f}[/bold]  "
+        f"Avg: [bold]${summary.get('avg_cost_per_run', 0):.4f}[/bold]"
+    )
+
+    if by_model:
+        data = report_by_model(days=days)
+        table = Table(title="By Model")
+        table.add_column("Model", style="cyan")
+        table.add_column("Runs", justify="right")
+        table.add_column("Total Cost", justify="right")
+        table.add_column("Avg Cost", justify="right")
+        for row in data:
+            table.add_row(
+                row["model_id"],
+                str(row["run_count"]),
+                f"${row['total_cost']:.4f}",
+                f"${row['avg_cost']:.4f}",
+            )
+        console.print(table)
+
+    if by_label:
+        data = report_by_label(days=days)
+        table = Table(title="By Label")
+        table.add_column("Label", style="cyan")
+        table.add_column("Runs", justify="right")
+        table.add_column("Total Cost", justify="right")
+        for row in data:
+            table.add_row(
+                row["label"] or "(none)",
+                str(row["run_count"]),
+                f"${row['total_cost']:.4f}",
+            )
+        console.print(table)
+
+    if by_day:
+        data = report_by_day(days=days)
+        table = Table(title="By Day")
+        table.add_column("Date", style="cyan")
+        table.add_column("Runs", justify="right")
+        table.add_column("Total Cost", justify="right")
+        for row in data:
+            table.add_row(
+                row["date"],
+                str(row["run_count"]),
+                f"${row['total_cost']:.4f}",
+            )
+        console.print(table)
+
+
+# --- trends command ---
+
+
+@app.command()
+def trends(
+    last: str = typer.Option("30d", "--last", "-l", help="Time window"),
+) -> None:
+    """Show daily spending trends."""
+    from cost_intel.report import report_by_day
+
+    days = parse_window(last)
+    data = report_by_day(days=days)
+
+    table = Table(title=f"Daily Trends (last {last})")
+    table.add_column("Date", style="cyan")
+    table.add_column("Runs", justify="right")
+    table.add_column("Total Cost", justify="right")
+    table.add_column("Avg Cost", justify="right")
+    for row in data:
+        table.add_row(
+            row["date"],
+            str(row["run_count"]),
+            f"${row['total_cost']:.4f}",
+            f"${row['avg_cost']:.4f}",
+        )
+    console.print(table)
+
+
+# --- export command ---
+
+
+@app.command()
+def export(
+    fmt: str = typer.Option(
+        "json", "--format", "-f", help="Output format: json or csv"
+    ),
+    last: Optional[str] = typer.Option(None, "--last", "-l", help="Time window"),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Output file path"
+    ),
+) -> None:
+    """Export cost data as JSON or CSV."""
+    from cost_intel.report import report_by_day
+
+    days = parse_window(last) if last else None
+    data = report_by_day(days=days)
+
+    if fmt == "json":
+        content = json.dumps(data, indent=2)
+    elif fmt == "csv":
+        lines = ["date,run_count,total_cost,avg_cost"]
+        for row in data:
+            lines.append(
+                f"{row['date']},{row['run_count']},"
+                f"{row['total_cost']},{row['avg_cost']}"
+            )
+        content = "\n".join(lines) + "\n"
+    else:
+        console.print(f"[red]Unknown format: {fmt}[/red]")
+        raise typer.Exit(1)
+
+    if output:
+        output.write_text(content)
+        console.print(f"[green]✓[/green] Exported to {output}")
+    else:
+        console.print(content)
 
 
 # --- pricing sub-app ---
@@ -126,3 +276,50 @@ def pricing_show(
 
 
 app.add_typer(pricing_app, name="pricing")
+
+
+# --- budget sub-app ---
+
+budget_app = typer.Typer(help="Budget management")
+
+
+@budget_app.command("set")
+def budget_set(
+    monthly: float = typer.Option(..., "--monthly", help="Monthly budget in USD"),
+    alert_threshold: int = typer.Option(
+        80, "--alert-threshold", help="Alert at % of budget"
+    ),
+) -> None:
+    """Set monthly budget and alert threshold."""
+    from cost_intel.budget import set_budget
+
+    set_budget(monthly=monthly, alert_threshold=alert_threshold)
+    console.print(
+        f"[green]✓[/green] Budget set: ${monthly}/mo, alert at {alert_threshold}%"
+    )
+
+
+@budget_app.command("status")
+def budget_status() -> None:
+    """Show current budget status."""
+    from cost_intel.budget import get_budget_status
+
+    status = get_budget_status()
+    if not status["budget_set"]:
+        console.print("[yellow]No budget set[/yellow]")
+        console.print(
+            "Run [bold]cost-intel budget set --monthly 500[/bold] to set one."
+        )
+        return
+
+    console.print(
+        f"[bold]Budget:[/bold] ${status['monthly']:.2f}/mo  "
+        f"[bold]Spent:[/bold] ${status['spent']:.2f}  "
+        f"[bold]Remaining:[/bold] ${status['remaining']:.2f}  "
+        f"[bold]Used:[/bold] {status['percent_used']:.1f}%"
+    )
+    if status["percent_used"] >= status["alert_threshold"]:
+        console.print(f"[red]⚠ Over {status['alert_threshold']}% threshold![/red]")
+
+
+app.add_typer(budget_app, name="budget")
