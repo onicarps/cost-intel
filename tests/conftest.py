@@ -8,18 +8,25 @@ def tmp_cost_intel_home(tmp_path, monkeypatch):
     """Set COST_INTEL_HOME to a temp dir for isolated tests.
 
     This prevents tests from reading/writing the real ~/.cost-intel/ directory.
+    Patches both the config module and db module paths.
     Yields the temp path.
     """
     cost_home = tmp_path / ".cost-intel"
     cost_home.mkdir()
     monkeypatch.setenv("COST_INTEL_HOME", str(cost_home))
 
-    # Also patch the db module paths so they pick up the new home
+    # Patch config module paths
     import cost_intel.config as config_mod
 
     config_mod.CONFIG_DIR = cost_home
     config_mod.CONFIG_PATH = cost_home / "config.yaml"
     config_mod._config_cache = None
+
+    # Patch db module paths
+    import cost_intel.db as db_mod
+
+    db_mod.DB_DIR = cost_home
+    db_mod.DB_PATH = cost_home / "cost-intel.db"
 
     yield cost_home
 
