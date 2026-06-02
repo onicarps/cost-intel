@@ -41,6 +41,46 @@ def refresh_pricing_cmd() -> None:
     console.print(f"[green]✓[/green] Refreshed pricing for [bold]{count}[/bold] models")
 
 
+# --- record command ---
+
+
+@app.command()
+def record(
+    model: str = typer.Option(
+        ..., "--model", "-m", help="Model ID (e.g., openai/gpt-4o)"
+    ),
+    input_tokens: int = typer.Option(..., "--input-tokens", "-i", help="Input tokens"),
+    output_tokens: int = typer.Option(
+        ..., "--output-tokens", "-o", help="Output tokens"
+    ),
+    label: str = typer.Option(None, "--label", "-l", help="Human label"),
+    cache_read_tokens: int = typer.Option(
+        0, "--cache-read-tokens", help="Cache read tokens"
+    ),
+    cache_write_tokens: int = typer.Option(
+        0, "--cache-write-tokens", help="Cache write tokens"
+    ),
+    latency_ms: int = typer.Option(None, "--latency-ms", help="Latency ms"),
+    provider: str = typer.Option(None, "--provider", help="Provider name"),
+    run_type: str = typer.Option("api_call", "--run-type", help="Run type"),
+) -> None:
+    """Record a cost run."""
+    from cost_intel.record import record_run
+
+    run_id = record_run(
+        model_id=model,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        label=label,
+        run_type=run_type,
+        provider=provider,
+        latency_ms=latency_ms,
+        cache_read_tokens=cache_read_tokens,
+        cache_write_tokens=cache_write_tokens,
+    )
+    console.print(f"[green]✓[/green] Recorded run [bold]{run_id}[/bold]")
+
+
 # --- pricing sub-app ---
 
 pricing_app = typer.Typer(help="Model pricing management")
