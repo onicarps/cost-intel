@@ -1,0 +1,97 @@
+# AGENTS.md — Cost Intelligence
+
+## Session Startup (MANDATORY)
+1. Read SOUL.md
+2. Read workspace/cost-intel/plan.md (if exists)
+3. Check Linear for active tasks (project: Cost Intelligence)
+4. Check Notion for recent design decisions
+
+## Build Rules
+- **TDD**: write failing test → run → implement → run → commit
+- **Type hints everywhere** (mypy-compatible)
+- **Google-style docstrings** for all public functions
+- **ruff check + ruff format** before every commit
+- **Commit after every task** (git add -A && git commit -m "type: description")
+- **No API keys in source** — read from .env
+
+## Project Context
+Python CLI tool (`cost-intel`) that tracks AI spending at the task level and correlates with quality scores. Standalone — zero foreign keys to any other product.
+
+**Tech Stack:** Python 3.11+, Typer + Rich, sqlite3 (WAL), httpx, Pydantic v2, pyyaml, tiktoken, hatchling, ruff, pytest
+
+**Data directory:** `~/.cost-intel/` (env override: `COST_INTEL_HOME`)
+**DB:** `~/.cost-intel/cost-intel.db`
+**Config:** `~/.cost-intel/config.yaml`
+
+## File Organization
+- Source: `workspace/cost-intel/src/cost_intel/`
+- Tests: `workspace/cost-intel/tests/`
+- Migrations: `workspace/cost-intel/src/cost_intel/migrations/`
+- Docs: `workspace/cost-intel/docs/`
+
+## Database Conventions
+- Composite PK `(model_id, effective_date)` for historical pricing
+- `is_current` flag on pricing rows
+- Numbered SQL migrations: `001_initial.sql`, `002_add_quality.sql`, `003_add_traces.sql`
+- `schema_version` table for migration tracking
+- Views use `DROP VIEW IF EXISTS` + `CREATE VIEW` in migrations (not `IF NOT EXISTS`)
+- `PRAGMA busy_timeout=5000` on all connections
+- Use `with connect() as conn:` contextmanager pattern
+
+## Testing
+- `pytest tests/ -v --cov=src --cov-report=term-missing`
+- Integration tests in `tests/integration/`
+- No real API calls in CI (mock HTTP with pytest-httpx)
+- Coverage target: >90%
+
+## CLI Conventions
+- Typer sub-apps for command groups (`budget`, `pricing`)
+- Rich tables for reports
+- Duration parser: `parse_window("7d")` → 7 (days). Canonical location: `src/cost_intel/duration.py`
+- Standard flags: `--last/-l`, `--days/-d`, `--window/-w`
+
+## Code Conventions
+- `src/cost_intel/__init__.py` — `__version__ = "0.1.0"`
+- `src/cost_intel/db.py` — connection manager + migration runner
+- `src/cost_intel/migrations/` — numbered SQL files
+- `src/cost_intel/models.py` — Pydantic models
+- `src/cost_intel/pricing.py` — OpenRouter fetch + historical store
+- `src/cost_intel/record.py` — cost run recording (cache tokens + raw_response)
+- `src/cost_intel/report.py` — aggregate views + time-window filtering
+- `src/cost_intel/budget.py` — budget set/status subcommands
+- `src/cost_intel/estimate.py` — tiktoken pre-call estimation
+- `src/cost_intel/ingest.py` — JSONL ingestion with provider-specific cache extraction
+- `src/cost_intel/quality.py` — score import + CPQP + waste detection
+- `src/cost_intel/optimize.py` — model routing + target CPQP
+- `src/cost_intel/compare.py` — model comparison with efficiency delta
+- `src/cost_intel/gate.py` — CI/CD cost gates
+- `src/cost_intel/alerts.py` — Slack webhook + SMTP email alerts
+- `src/cost_intel/otel.py` — OpenTelemetry span ingestion + trace cost
+- `src/cost_intel/enforce.py` — budget enforcement / hard-stop
+- `src/cost_intel/prompt_optimize.py` — high-cost pattern analysis
+- `src/cost_intel/adapters/` — quality score import adapters
+- `None` imports: always `from typing import Optional`
+
+## Testing Conventions
+- Test file: `test_<module>.py` for each module
+- `conftest.py` — shared fixtures (tmp_db, tmp_cost_intel_home)
+- Each task: write failing test FIRST, then implement
+
+## Phase Gates
+Each phase must pass validation before next phase starts:
+- **Phase 1**: `pip install cost-intel` works, record + report work end-to-end, costs match invoices
+- **Phase 2**: CPQP ordering matches intuition, division-by-zero guard works, percentile ratings displayed
+- **Phase 3**: Gate exits 0/1 correctly, alerts trigger at right threshold
+- **Phase 4**: OTel trace cost breakdown works, budget enforcement blocks when exceeded
+
+## Credentials (in ~/.hermes/profiles/cost-intel/.env)
+- `OPENROUTER_API_KEY`
+- `LINEAR_API_KEY`
+- `GITHUB_TOKEN`
+- `FACTORY_API_KEY`
+
+## Git
+- Repo: (to be created)
+- Branch: main
+- Branch naming: `cost-intel/ONI-XX-description`
+- Commit style: `type: description` (feat:, fix:, test:, etc.)
