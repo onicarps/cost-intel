@@ -278,7 +278,42 @@ def pricing_show(
 app.add_typer(pricing_app, name="pricing")
 
 
-# --- budget sub-app ---
+# --- estimate command ---
+# --- estimate command ---
+
+
+@app.command()
+def estimate(
+    text: str = typer.Argument(..., help="Text to estimate tokens for"),
+    model: str = typer.Option(
+        "gpt-4", "--model", "-m", help="Model name (e.g., gpt-4, gpt-4o)"
+    ),
+) -> None:
+    """Estimate token count and cost for a given text."""
+    from cost_intel.estimate import estimate_cost
+
+    result = estimate_cost(text, model=model)
+    console.print(
+        f"Tokens: [bold]{result['input_tokens']}[/bold]  "
+        f"Est. cost: [bold]${result['estimated_cost']:.6f}[/bold]"
+    )
+
+
+# --- ingest-api-responses command ---
+
+
+@app.command(name="ingest-api-responses")
+def ingest_api_responses(
+    file: Path = typer.Argument(..., help="Path to JSONL file"),
+    format: str = typer.Option("openrouter", "--format", "-f", help="Provider format"),
+    label: Optional[str] = typer.Option(None, "--label", "-l", help="Run label"),
+) -> None:
+    """Ingest cost runs from a JSONL file of API responses."""
+    from cost_intel.ingest import ingest_jsonl
+
+    count = ingest_jsonl(str(file), format=format, label=label)
+    console.print(f"[green]✓[/green] Ingested [bold]{count}[/bold] runs from {file}")
+
 
 budget_app = typer.Typer(help="Budget management")
 

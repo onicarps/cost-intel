@@ -40,7 +40,7 @@ class TestReportSummary:
 
     def test_summary_with_time_window(self, tmp_cost_intel_home):
         """Summary filters by time window (days)."""
-        from cost_intel.db import init_db, get_connection
+        from cost_intel.db import get_connection, init_db
 
         init_db()
         from cost_intel.pricing import upsert_pricing
