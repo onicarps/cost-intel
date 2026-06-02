@@ -3,8 +3,18 @@
 ## Session Startup (MANDATORY)
 1. Read SOUL.md (in profile root)
 2. Read this file
-3. Read plan.md (in workspace root)
-4. Check Linear for active tasks (project: Cost Intelligence, ONI-43..ONI-71)
+3. Read PHASE1_COMPLETE.md (in workspace root) — Phase 1 handoff doc
+4. Read plan.md (in workspace root) — Phase 2+ implementation plan
+5. Check Linear for active tasks (project: Cost Intelligence, ONI-43..ONI-71)
+
+## Project Status (June 3 2026)
+**Phase 1 COMPLETE** — All 12 tasks done, 77 tests passing, pushed to GitHub.
+See PHASE1_COMPLETE.md for full details, known issues, and remaining phases.
+
+**Next: Phase 2** — Quality Correlation (Tasks 2.0-2.5)
+- Migration 002: quality_scores table + cost_run_cpqp view with PERCENT_RANK()
+- Quality score import adapters (Eval Harness, Braintrust, CSV)
+- CPQP report, waste detection, model comparison, optimization
 
 ## Project
 `cost-intel` — a standalone Python CLI for AI cost tracking and quality correlation.
