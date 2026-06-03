@@ -10,17 +10,20 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
 authors = [
-    { name = "Cost Intelligence Team" },
+    { name = "Oni" },
 ]
+keywords = ["ai", "cost", "tracking", "llm", "openrouter", "quality", "cpqp", "cli"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
 ]
 dependencies = [
     "typer>=0.9",
@@ -40,6 +43,11 @@ dev = [
 
 [project.scripts]
 cost-intel = "cost_intel.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/onicarps/cost-intel"
+Repository = "https://github.com/onicarps/cost-intel"
+Issues = "https://github.com/onicarps/cost-intel/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/cost_intel"]
