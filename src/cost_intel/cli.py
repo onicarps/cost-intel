@@ -644,6 +644,47 @@ def import_scores_cmd(
         raise typer.Exit(1)
 
 
+# --- gate command ---
+
+
+@app.command()
+def gate(
+    max_avg_cpqp: Optional[float] = typer.Option(
+        None, "--max-avg-cpqp", help="Max average CPQP threshold"
+    ),
+    max_waste_index: Optional[float] = typer.Option(
+        None, "--max-waste-index", help="Max waste index threshold (0.0-1.0)"
+    ),
+    budget_check: bool = typer.Option(
+        False, "--budget-check", help="Check budget threshold"
+    ),
+    window: str = typer.Option(
+        "7d", "--window", "-w", help="Window (e.g. 7d, 30d, 24h, 7)"
+    ),
+    fmt: str = typer.Option(
+        "text", "--format", "-f", help="Output format: text or json"
+    ),
+) -> None:
+    """CI/CD cost gate. Exits 0 if passed, 1 if failed."""
+    from cost_intel.gate import check_gate
+
+    window_days = parse_window(window)
+    passed, msg = check_gate(
+        max_avg_cpqp=max_avg_cpqp,
+        max_waste_index=max_waste_index,
+        budget_check=budget_check,
+        window_days=window_days,
+    )
+    if fmt == "json":
+        console.print(json.dumps({"passed": passed, "message": msg}))
+    else:
+        if passed:
+            console.print(f"[green]✓[/green] {msg}")
+        else:
+            console.print(f"[red]✗[/red] {msg}")
+    raise typer.Exit(code=0 if passed else 1)
+
+
 budget_app = typer.Typer(help="Budget management")
 
 
