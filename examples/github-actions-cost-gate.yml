@@ -1,0 +1,45 @@
+# Example GitHub Actions workflow: cost-intel CI/CD cost gate.
+#
+# Copy this file to .github/workflows/cost-gate.yml in your repository to
+# fail builds when AI spend exceeds quality, waste, or budget thresholds.
+#
+# Each `cost-intel gate` invocation exits 0 when the gate passes and 1 when
+# it fails, so the job will fail at the first breached threshold.
+
+name: Cost Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  cost-gate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install cost-intel
+        run: |
+          python -m pip install --upgrade pip
+          pip install cost-intel
+
+      - name: Gate on average CPQP (7d)
+        run: cost-intel gate --max-avg-cpqp 0.10 --window 7d
+
+      - name: Gate on waste index (7d)
+        run: cost-intel gate --max-waste-index 0.20 --window 7d
+
+      - name: Gate on monthly budget
+        run: cost-intel gate --budget-check
+
+      - name: Gate on average CPQP (7d, JSON output)
+        run: cost-intel gate --max-avg-cpqp 0.10 --window 7d --format json
