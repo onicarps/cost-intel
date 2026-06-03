@@ -9,10 +9,10 @@
 6. Check Linear for active tasks (project: Cost Intelligence, ONI-43..ONI-71)
 
 ## Project Status (June 3 2026)
-**Phase 2 COMPLETE** — All 18 tasks done (12 Phase 1 + 6 Phase 2), 123 tests passing, pushed to GitHub.
-See PHASE2_COMPLETE.md for full details, known issues, and remaining phases.
+**Phase 3 COMPLETE** — All 21 tasks done (12+6+3), 145 tests passing, pushed to GitHub.
+See PHASE3_COMPLETE.md for full details and remaining phases.
 
-**Next: Phase 3** — CI/CD + Alerts (Tasks 3.1-3.3)
+**Next: Phase 4** — Multi-Agent + Advanced (Tasks 4.0-4.4)
 - Migration 002: quality_scores table + cost_run_cpqp view with PERCENT_RANK()
 - Quality score import adapters (Eval Harness, Braintrust, CSV)
 - CPQP report, waste detection, model comparison, optimization

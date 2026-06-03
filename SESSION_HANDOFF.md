@@ -1,7 +1,7 @@
 # SESSION HANDOFF — Cost Intelligence
 
 > **Last session:** June 3, 2026
-> **Current state:** Phase 2 COMPLETE, Phase 3 ready to start
+> **Current state:** Phase 3 COMPLETE, Phase 4 ready to start
 > **Read this file first** if you're continuing this project in a new session
 
 ---
@@ -18,38 +18,37 @@
    ```bash
    cost-intel --version          # → 0.1.0
    cost-intel --help             # → lists all commands
-   pytest tests/ -q              # → 123 passed
+   pytest tests/ -q              # → 145 passed
    ```
 
-3. **Update Linear issues** (mark Phase 2 as done):
-   - Mark ONI-54 through ONI-59 as **Done**
+3. **Update Linear issues** (mark Phase 3 as done):
+   - Mark ONI-63, ONI-64, ONI-65 as **Done**
 
-4. **Kick off Phase 3** via individual droid exec:
-   - Task 3.1 — `gate.py` cost gate
-   - Task 3.2 — GitHub Actions example YAML
-   - Task 3.3 — Slack webhook + SMTP email alerts
+4. **Kick off Phase 4** via two split Factory Missions:
+   - **Mission A (OTel track):** Tasks 4.0+4.1+4.2 — migration 003, span ingestion, trace cost breakdown
+   - **Mission B (Optimization track):** Tasks 4.3+4.4 — prompt optimization, budget enforcement
 
 ---
 
 ## Project Summary
 
-**What:** `cost-intel` — standalone Python CLI that tracks AI spending at the task level, correlates with quality scores, produces cost-efficiency metrics.
+**What:** `cost-intel` — standalone Python CLI that tracks AI spending at the task level, correlates with quality scores, produces cost-efficiency metrics, and integrates with CI/CD.
 
 **Value prop:** "No unified cost-quality metric in a CLI-native package."
 
-**Repo:** https://github.com/onicarps/cost-intel (main branch, 15 commits)
+**Repo:** https://github.com/onicarps/cost-intel (main branch, 21 commits)
 
 ---
 
-## What Exists (Phase 1 + Phase 2 — Complete)
+## What Exists (Phases 1-3 Complete)
 
-### Source Modules
+### Source Modules (24 files)
 
 | Module | Purpose | Phase |
 |--------|---------|-------|
 | `__init__.py` | `__version__ = "0.1.0"` | 1 |
 | `__main__.py` | `python -m cost_intel` entry | 1 |
-| `cli.py` | Typer app, all CLI commands | 1+2 |
+| `cli.py` | Typer app, all CLI commands | 1+2+3 |
 | `config.py` | YAML config loader with caching | 1 |
 | `db.py` | Connection manager, `connect()` contextmanager, `init_db()` | 1 |
 | `migration_runner.py` | Numbered SQL migration runner | 1 |
@@ -67,10 +66,12 @@
 | `trends.py` | CPQP week-over-week trend | 2 |
 | `adapters/eval_harness.py` | Eval Harness SQLite adapter | 2 |
 | `adapters/braintrust.py` | Braintrust REST API adapter | 2 |
+| `gate.py` | CI/CD cost gate (CPQP/waste-index/budget) | 3 |
+| `alerts.py` | Slack + SMTP budget alerts | 3 |
 | `migrations/001_initial.sql` | Phase 1 schema | 1 |
-| `migrations/002_add_quality.sql` | Phase 2 schema (quality_scores + CPQP view) | 2 |
+| `migrations/002_add_quality.sql` | Phase 2 schema | 2 |
 
-### CLI Commands (all working)
+### All CLI Commands
 
 ```
 cost-intel --version                          → 0.1.0
@@ -94,57 +95,65 @@ cost-intel optimize --target-cpqp 0.05        → runs exceeding target
 cost-intel import-scores --source csv ...     → CSV import
 cost-intel import-scores --source eval-harness ... → Eval Harness import
 cost-intel import-scores --source braintrust ...   → Braintrust import
+cost-intel gate --max-avg-cpqp 0.10 --window 7d → CI/CD cost gate
+cost-intel gate --max-waste-index 0.20        → waste index gate
+cost-intel gate --budget-check                → budget gate
+cost-intel gate --format json                 → JSON output
+cost-intel alert check                        → run budget alerts
+cost-intel alert test                         → show configured channels
 ```
 
-### Tests (123 passing, 0 lint errors)
+### Tests (145 passing, 0 lint errors)
 
-| File | Tests | Coverage |
-|------|-------|----------|
-| test_config.py | 5 | Config loader, caching, eval weights |
-| test_db.py | 12 | Schema, migrations, WAL, busy_timeout, contextmanager |
-| test_duration.py | 12 | parse_window (d/h/w/bare/invalid) |
-| test_estimate.py | 5 | Token estimation, cost prediction |
-| test_ingest.py | 9 | Token extraction, JSONL ingest, error handling |
-| test_migrations.py | 6 | Migration 002 quality + CPQP view |
-| test_pricing.py | 10 | Upsert, historical, manual, refresh |
-| test_quality.py | 13 | Import, combined_score, CSV, waste, CPQP |
-| test_adapters.py | 3 | Eval Harness + Braintrust adapters |
-| test_record.py | 11 | Recording, cost computation, getters |
-| test_report.py | 9 | Summary, by-model/label/day, budget |
-| test_cli_cpqp.py | 5 | CPQP CLI, waste-only, ratings |
-| test_compare.py | 5 | Delta CPQP, empty filter |
-| test_optimize.py | 9 | Routing, waste index, target CPQP, no-shadow |
-| test_trends.py | 5 | Trend keys, CLI metric/cpqp |
-| test_utils.py | 3 | now_iso, retry |
+| File | Tests | Phase |
+|------|-------|-------|
+| test_config.py | 5 | 1 |
+| test_db.py | 12 | 1 |
+| test_duration.py | 12 | 1 |
+| test_estimate.py | 5 | 1 |
+| test_ingest.py | 9 | 1 |
+| test_migrations.py | 6 | 2 |
+| test_pricing.py | 10 | 1 |
+| test_quality.py | 13 | 2 |
+| test_adapters.py | 3 | 2 |
+| test_record.py | 11 | 1 |
+| test_report.py | 9 | 1 |
+| test_cli_cpqp.py | 5 | 2 |
+| test_compare.py | 5 | 2 |
+| test_optimize.py | 9 | 2 |
+| test_trends.py | 5 | 2 |
+| test_gate.py | 13 | 3 |
+| test_alerts.py | 9 | 3 |
+| test_utils.py | 3 | 1 (includes gate window parsing) |
 
 ---
 
-## What's Next: Phase 3 (CI/CD + Alerts)
+## What's Next: Phase 4 (Multi-Agent + Advanced)
 
-**Approach:** Individual droid exec calls (small tasks, needs oversight).
+**Approach:** Two split Missions.
 
-### Tasks
+### Mission A — OTel Track (Tasks 4.0-4.2)
 
 | Task | Description | Key Files |
 |------|-------------|-----------|
-| 3.1 | Cost gate — `cost-intel gate --max-avg-cpqp 0.10 --window 7d` | `gate.py` |
-| 3.2 | GitHub Actions example YAML | `.github/workflows/cost-gate.yml` |
-| 3.3 | Budget alerts — Slack webhook + SMTP email | `alerts.py` |
+| 4.0 | Migration 003: trace_id, span_id, parent_span_id columns on cost_runs | `migrations/003_add_traces.sql` |
+| 4.1 | OTel span ingestion from JSON/OTLP | `otel.py` |
+| 4.2 | Trace cost breakdown (total cost per trace, per-span cost attribution) | `otel.py` CLI commands |
 
-### Phase 3 Gate
+### Mission B — Optimization Track (Tasks 4.3-4.4)
+
+| Task | Description | Key Files |
+|------|-------------|-----------|
+| 4.3 | Prompt optimization: identify high-cost patterns, suggest shorter prompts | `prompt_opt.py` |
+| 4.4 | Budget enforcement: hard-stop when budget exceeded (middleware pattern) | `enforce.py` |
+
+### Phase 4 Gate
 ```bash
-cost-intel gate --max-avg-cpqp 0.10 --window 7d  → exits 0 or 1
-cost-intel alerts --channel slack --threshold 0.8  → sends when budget 80% exceeded
-cost-intel alerts --channel email --threshold 0.8   → sends email alert
+cost-intel ingest-otel trace.json              → ingest OTel spans
+cost-intel trace-cost --trace-id abc123        → total trace cost breakdown
+cost-intel prompt-analyze --last 30d           → high-cost prompt patterns
+cost-intel enforce --monthly 100              → blocks when budget exceeded
 ```
-
----
-
-## Phase 4 (Multi-Agent) — After Phase 3
-
-**Approach:** Two split Missions.
-- **Mission A (OTel track):** Tasks 4.0+4.1+4.2 — migration 003, span ingestion, trace cost breakdown
-- **Mission B (Optimization track):** Tasks 4.3+4.4 — prompt optimization, budget enforcement
 
 ---
 
@@ -179,10 +188,8 @@ source .venv/bin/activate
 
 | File | Purpose |
 |------|---------|
-| `SOUL.md` (profile root) | Mission + protocols |
-| `AGENTS.md` (workspace) | Build rules + conventions |
-| `PHASE1_COMPLETE.md` (workspace) | Phase 1 handoff details |
-| `PHASE2_COMPLETE.md` (workspace) | Phase 2 handoff details |
-| `mission-phase2.md` (workspace) | Factory Droid Phase 2 prompt |
-| `plan.md` (workspace) | Full 4-phase plan (4297 lines) |
-| `research/cost-intelligence/plan.md` (profile) | Original audited plan |
+| `PHASE1_COMPLETE.md` | Phase 1 handoff |
+| `PHASE2_COMPLETE.md` | Phase 2 handoff |
+| `PHASE3_COMPLETE.md` | Phase 3 handoff |
+| `plan.md` | Full 4-phase plan (4297 lines) |
+| `mission-phase2.md` | Factory Droid Phase 2 prompt |
