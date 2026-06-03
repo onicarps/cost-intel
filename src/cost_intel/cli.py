@@ -315,6 +315,110 @@ def ingest_api_responses(
     console.print(f"[green]✓[/green] Ingested [bold]{count}[/bold] runs from {file}")
 
 
+# --- cpqp command ---
+
+
+def _render_cpqp_row(table: Table, r: dict) -> None:
+    """Render a CPQP row with color-coded rating."""
+    rating = r.get("rating") or "N/A"
+    rating_style = {
+        "A": "green",
+        "B": "bright_green",
+        "C": "yellow",
+        "D": "red",
+        "F": "bold red",
+        "N/A": "dim",
+    }.get(rating, "")
+    table.add_row(
+        (r.get("run_id") or "")[:8],
+        r.get("label") or "",
+        r.get("model_id") or "",
+        f"${r['total_cost']:.4f}" if r.get("total_cost") is not None else "N/A",
+        f"{r['combined_score']:.2f}" if r.get("combined_score") is not None else "N/A",
+        f"${r['cpqp']:.4f}" if r.get("cpqp") is not None else "N/A",
+        f"[{rating_style}]{rating}[/{rating_style}]" if rating_style else rating,
+    )
+
+
+def _cpqp_table(title: str) -> Table:
+    table = Table(title=title)
+    table.add_column("Run ID", style="cyan", max_width=12)
+    table.add_column("Label", max_width=20)
+    table.add_column("Model", max_width=25)
+    table.add_column("Cost", justify="right")
+    table.add_column("Score", justify="right")
+    table.add_column("CPQP", justify="right")
+    table.add_column("Rating", justify="right")
+    return table
+
+
+@app.command()
+def cpqp(
+    waste_only: bool = typer.Option(
+        False, "--waste-only", help="Show only D/F rated (inefficient) runs"
+    ),
+    last: Optional[str] = typer.Option(
+        None, "--last", "-l", help="Time window (e.g., 7d, 30d, 12h)"
+    ),
+) -> None:
+    """Show cost-per-quality-point (CPQP) report with percentile ratings."""
+    from cost_intel.quality import get_all_cpqp, get_waste_runs
+
+    days = parse_window(last) if last else None
+
+    if waste_only:
+        results = get_waste_runs(days=days)
+        title = "Waste Runs (Rating D or F)"
+    else:
+        results = get_all_cpqp(days=days)
+        title = "Cost-Per-Quality-Point (CPQP)"
+
+    if last:
+        title += f" — last {last}"
+
+    if not results:
+        console.print(f"[dim]No CPQP results to display for {title}.[/dim]")
+        return
+
+    table = _cpqp_table(title)
+    for r in results:
+        _render_cpqp_row(table, r)
+    console.print(table)
+
+
+@app.command()
+def waste(
+    last: Optional[str] = typer.Option(
+        None, "--last", "-l", help="Time window (e.g., 7d, 30d)"
+    ),
+) -> None:
+    """Show waste analysis — runs with D or F efficiency ratings."""
+    from cost_intel.quality import get_waste_runs
+
+    days = parse_window(last) if last else None
+    waste_runs = get_waste_runs(days=days)
+
+    try:
+        from cost_intel.optimize import get_waste_index
+
+        wi = get_waste_index(days=days)
+        console.print(
+            f"Waste Index: [bold]{wi['waste_index']:.1%}[/bold] "
+            f"(${wi['waste_spend']:.4f} of ${wi['total_spend']:.4f})"
+        )
+    except ImportError:
+        pass
+
+    if not waste_runs:
+        console.print("[green]No waste detected — all runs rated A/B/C.[/green]")
+        return
+
+    table = _cpqp_table("Waste Runs (Rating D or F)")
+    for r in waste_runs:
+        _render_cpqp_row(table, r)
+    console.print(table)
+
+
 # --- import-scores command ---
 
 
