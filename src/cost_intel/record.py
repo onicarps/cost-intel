@@ -1,8 +1,4 @@
-"""Cost run recording with cache tokens, historical pricing, raw_response.
-
-Phase 4 columns (trace_id, span_id, parent_span_id) are accepted
-but silently ignored until migration 003 adds those columns.
-"""
+"""Cost run recording with cache tokens, historical pricing, raw_response."""
 
 import uuid
 from typing import Optional
@@ -57,9 +53,9 @@ def record_run(
     cache_write_tokens: int = 0,
     raw_response: Optional[str] = None,
     as_of_date: Optional[str] = None,
-    trace_id: Optional[str] = None,  # ignored until migration 003
-    span_id: Optional[str] = None,  # ignored until migration 003
-    parent_span_id: Optional[str] = None,  # ignored until migration 003
+    trace_id: Optional[str] = None,
+    span_id: Optional[str] = None,
+    parent_span_id: Optional[str] = None,
     run_id: Optional[str] = None,
 ) -> str:
     """Record a cost run and its API call details.
@@ -76,9 +72,9 @@ def record_run(
         cache_write_tokens: Cache write token count.
         raw_response: Optional response body (truncated to 4KB).
         as_of_date: Date for historical pricing lookup.
-        trace_id: Trace ID (Phase 4, ignored until migration 003).
-        span_id: Span ID (Phase 4, ignored until migration 003).
-        parent_span_id: Parent span ID (Phase 4, ignored).
+        trace_id: OpenTelemetry trace ID for cross-span correlation.
+        span_id: OpenTelemetry span ID for this run.
+        parent_span_id: Parent span ID for trace hierarchy.
         run_id: Optional explicit run ID (auto-generated if None).
 
     Returns:
@@ -102,9 +98,19 @@ def record_run(
     conn.execute(
         "INSERT INTO cost_runs "
         "(run_id, run_type, label, model_id, started_at, "
-        "finished_at, status) "
-        "VALUES (?, ?, ?, ?, ?, ?, 'completed')",
-        (rid, run_type, label, model_id, now, now),
+        "finished_at, status, trace_id, span_id, parent_span_id) "
+        "VALUES (?, ?, ?, ?, ?, ?, 'completed', ?, ?, ?)",
+        (
+            rid,
+            run_type,
+            label,
+            model_id,
+            now,
+            now,
+            trace_id,
+            span_id,
+            parent_span_id,
+        ),
     )
     conn.execute(
         "INSERT INTO cost_run_calls "
