@@ -831,3 +831,42 @@ def trace_cost_cmd(
         f"across {data['total_runs']} span(s) "
         f"({data['total_input_tokens']} in / {data['total_output_tokens']} out)"
     )
+
+
+@app.command(name="prompt-opt")
+def prompt_opt_cmd(
+    top_n: int = typer.Option(10, "--top-n"),
+    threshold_tokens: int = typer.Option(3000, "--threshold-tokens"),
+) -> None:
+    """Analyze prompt patterns and suggest optimizations."""
+    from rich.table import Table
+
+    from cost_intel.prompt_opt import analyze_prompt_patterns, suggest_trimming
+
+    console.print("[bold]Top Cost Patterns by Label Prefix[/bold]")
+    patterns = analyze_prompt_patterns(top_n=top_n)
+    table = Table()
+    table.add_column("Prefix", style="cyan")
+    table.add_column("Runs", justify="right")
+    table.add_column("Avg Cost", justify="right")
+    table.add_column("Avg Input Tok", justify="right")
+    table.add_column("Total Cost", justify="right")
+    for p in patterns:
+        table.add_row(
+            p["label_prefix"],
+            str(p["total_runs"]),
+            f"${p['avg_cost']:.4f}",
+            str(int(p["avg_input_tokens"])),
+            f"${p['total_cost']:.4f}",
+        )
+    console.print(table)
+
+    console.print(
+        f"\n[bold]Trimming Suggestions (>{threshold_tokens} avg input tokens)[/bold]"
+    )
+    suggestions = suggest_trimming(threshold_tokens=threshold_tokens)
+    if not suggestions:
+        console.print("[green]No patterns exceed the threshold.[/green]")
+    else:
+        for s in suggestions:
+            console.print(f"  - {s['suggestion']}")
