@@ -169,14 +169,39 @@ def report(
 @app.command()
 def trends(
     last: str = typer.Option("30d", "--last", "-l", help="Time window"),
+    days: Optional[int] = typer.Option(
+        None, "--days", "-d", help="Window size in days (overrides --last)"
+    ),
+    metric: str = typer.Option(
+        "spending", "--metric", "-m", help="Metric: spending (default) or cpqp"
+    ),
 ) -> None:
-    """Show daily spending trends."""
+    """Show spending trends or week-over-week CPQP trend."""
     from cost_intel.report import report_by_day
+    from cost_intel.trends import get_cpqp_trend
 
-    days = parse_window(last)
-    data = report_by_day(days=days)
+    window_days = days if days is not None else parse_window(last)
 
-    table = Table(title=f"Daily Trends (last {last})")
+    if metric == "cpqp":
+        trend = get_cpqp_trend(window_days=window_days)
+        table = Table(title=f"CPQP Trend (window={window_days}d)")
+        table.add_column("Window", style="cyan")
+        table.add_column("Avg CPQP", justify="right")
+        table.add_row("This window", f"${trend['this_window']:.4f}")
+        table.add_row("Prior window", f"${trend['prior_window']:.4f}")
+        ratio = trend["ratio"]
+        if ratio > 1:
+            ratio_str = f"[red]↑ {ratio:.2f}[/red] (degrading)"
+        elif 0 < ratio < 1:
+            ratio_str = f"[green]↓ {ratio:.2f}[/green] (improving)"
+        else:
+            ratio_str = f"{ratio:.2f}"
+        table.add_row("Ratio", ratio_str)
+        console.print(table)
+        return
+
+    data = report_by_day(days=window_days)
+    table = Table(title=f"Daily Trends (last {window_days}d)")
     table.add_column("Date", style="cyan")
     table.add_column("Runs", justify="right")
     table.add_column("Total Cost", justify="right")
