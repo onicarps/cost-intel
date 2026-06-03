@@ -315,6 +315,81 @@ def ingest_api_responses(
     console.print(f"[green]✓[/green] Ingested [bold]{count}[/bold] runs from {file}")
 
 
+# --- import-scores command ---
+
+
+@app.command(name="import-scores")
+def import_scores_cmd(
+    source: str = typer.Option(
+        ..., "--source", "-s", help="Source: csv, eval-harness, braintrust"
+    ),
+    file: Optional[str] = typer.Option(
+        None, "--file", "-f", help="CSV file path (for csv source)"
+    ),
+    db_path: Optional[str] = typer.Option(
+        None, "--db-path", help="SQLite DB path (for eval-harness source)"
+    ),
+    api_key: Optional[str] = typer.Option(
+        None, "--api-key", help="API key (for braintrust source)"
+    ),
+    project_id: Optional[str] = typer.Option(
+        None, "--project-id", help="Project ID (for braintrust source)"
+    ),
+    experiment_id: Optional[str] = typer.Option(
+        None, "--experiment-id", help="Experiment ID (for braintrust source)"
+    ),
+    mapping: Optional[str] = typer.Option(
+        None,
+        "--mapping",
+        help='JSON column mapping, e.g. \'{"run_id":"id","score":"quality"}\'',
+    ),
+) -> None:
+    """Import quality scores from an external source."""
+    if source == "csv":
+        if not file:
+            console.print("[red]Error:[/red] --file is required for source 'csv'")
+            raise typer.Exit(1)
+        from cost_intel.quality import import_scores_csv
+
+        mapping_dict = json.loads(mapping) if mapping else None
+        count = import_scores_csv(file, source="csv", mapping=mapping_dict)
+        console.print(
+            f"[green]✓[/green] Imported [bold]{count}[/bold] scores from {file}"
+        )
+    elif source == "eval-harness":
+        if not db_path:
+            console.print(
+                "[red]Error:[/red] --db-path is required for source 'eval-harness'"
+            )
+            raise typer.Exit(1)
+        from cost_intel.adapters.eval_harness import import_from_db
+
+        count = import_from_db(db_path)
+        console.print(
+            f"[green]✓[/green] Imported [bold]{count}[/bold] scores from Eval Harness"
+        )
+    elif source == "braintrust":
+        if not api_key or not project_id:
+            console.print(
+                "[red]Error:[/red] --api-key and --project-id are required for "
+                "source 'braintrust'"
+            )
+            raise typer.Exit(1)
+        from cost_intel.adapters.braintrust import import_from_api
+
+        count = import_from_api(
+            api_key=api_key,
+            project_id=project_id,
+            experiment_id=experiment_id,
+        )
+        console.print(
+            f"[green]✓[/green] Imported [bold]{count}[/bold] scores from Braintrust"
+        )
+    else:
+        console.print(f"[red]Unknown source: {source}[/red]")
+        raise typer.Exit(1)
+
+
 budget_app = typer.Typer(help="Budget management")
 
 
