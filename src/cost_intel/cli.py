@@ -419,6 +419,52 @@ def waste(
     console.print(table)
 
 
+# --- compare-models command ---
+
+
+@app.command(name="compare-models")
+def compare_cmd(
+    label: Optional[str] = typer.Option(
+        None, "--label", "-l", help="Filter by task label"
+    ),
+    models: Optional[str] = typer.Option(
+        None, "--models", "-m", help="Comma-separated model IDs to compare"
+    ),
+) -> None:
+    """Compare cost efficiency and CPQP across models."""
+    from cost_intel.compare import compare_models
+
+    model_list = [m.strip() for m in models.split(",")] if models else None
+    results = compare_models(label=label, models=model_list)
+
+    if not results:
+        console.print(
+            "[yellow]No results — filter returned empty. "
+            "Check --label / --models values.[/yellow]"
+        )
+        return
+
+    table = Table(title="Model Comparison")
+    table.add_column("Model", style="cyan")
+    table.add_column("Runs", justify="right")
+    table.add_column("Total Cost", justify="right")
+    table.add_column("Avg Cost/Run", justify="right")
+    table.add_column("Avg CPQP", justify="right")
+    table.add_column("Δ CPQP", justify="right")
+    for r in results:
+        delta = r.get("delta_cpqp")
+        delta_str = f"{delta:+.4f}" if delta is not None else "N/A"
+        table.add_row(
+            r["model_id"],
+            str(r["total_runs"]),
+            f"${r['total_cost']:.4f}",
+            f"${r['avg_cost_per_run']:.4f}",
+            f"${r['avg_cpqp']:.4f}" if r.get("avg_cpqp") is not None else "N/A",
+            delta_str,
+        )
+    console.print(table)
+
+
 # --- import-scores command ---
 
 
