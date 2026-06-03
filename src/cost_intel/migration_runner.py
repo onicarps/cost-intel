@@ -34,10 +34,11 @@ def get_current_version(
     """
     should_close = conn is None
     if conn is None:
-        conn = sqlite3.connect(":memory:")
+        from cost_intel.db import get_connection
+
+        conn = get_connection()
 
     try:
-        # Check if schema_version table exists
         result = conn.execute(
             "SELECT name FROM sqlite_master "
             "WHERE type='table' AND name='schema_version'"
