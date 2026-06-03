@@ -419,6 +419,85 @@ def waste(
     console.print(table)
 
 
+# --- optimize command ---
+
+
+@app.command()
+def optimize(
+    target_cpqp: Optional[float] = typer.Option(
+        None, "--target-cpqp", help="Show runs exceeding this CPQP target"
+    ),
+    route: bool = typer.Option(
+        False,
+        "--suggest-model-routing",
+        help="Suggest cheaper models for the same task",
+    ),
+    min_runs: int = typer.Option(
+        1, "--min-runs", help="Minimum runs per model for routing suggestions"
+    ),
+) -> None:
+    """Find optimization opportunities (model routing, target CPQP, waste)."""
+    from cost_intel.optimize import (
+        get_runs_above_target_cpqp,
+        get_waste_index,
+        suggest_model_routing,
+    )
+
+    if target_cpqp is not None:
+        results = get_runs_above_target_cpqp(target_cpqp)
+        table = Table(title=f"Runs Above Target CPQP (${target_cpqp:.4f})")
+        table.add_column("Run ID", style="cyan", max_width=12)
+        table.add_column("Label", max_width=20)
+        table.add_column("Model", max_width=25)
+        table.add_column("Cost", justify="right")
+        table.add_column("Score", justify="right")
+        table.add_column("CPQP", justify="right")
+        table.add_column("Rating", justify="right")
+        for r in results:
+            table.add_row(
+                r["run_id"][:8],
+                r["label"] or "",
+                r["model_id"] or "",
+                f"${r['total_cost']:.4f}" if r.get("total_cost") is not None else "N/A",
+                f"{r['combined_score']:.2f}"
+                if r["combined_score"] is not None
+                else "N/A",
+                f"${r['cpqp']:.4f}" if r["cpqp"] is not None else "N/A",
+                r.get("rating") or "N/A",
+            )
+        console.print(table)
+        console.print(f"[dim]{len(results)} run(s) exceed target CPQP[/dim]")
+    elif route:
+        results = suggest_model_routing(min_runs=min_runs)
+        if not results:
+            console.print("[yellow]No models meet --min-runs threshold.[/yellow]")
+            return
+        table = Table(title="Model Routing Suggestions")
+        table.add_column("Model", style="cyan")
+        table.add_column("Runs", justify="right")
+        table.add_column("Avg Cost/Run", justify="right")
+        table.add_column("Min", justify="right")
+        table.add_column("Max", justify="right")
+        for r in results:
+            table.add_row(
+                r["model_id"],
+                str(r["total_runs"]),
+                f"${r['avg_cost_per_run']:.4f}",
+                f"${r['min_cost']:.4f}",
+                f"${r['max_cost']:.4f}",
+            )
+        console.print(table)
+    else:
+        wi = get_waste_index()
+        table = Table(title="Waste Index")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", justify="right")
+        table.add_row("Waste Index", f"{wi['waste_index']:.1%}")
+        table.add_row("Total Spend", f"${wi['total_spend']:.4f}")
+        table.add_row("Waste Spend", f"${wi['waste_spend']:.4f}")
+        console.print(table)
+
+
 # --- compare-models command ---
 
 
