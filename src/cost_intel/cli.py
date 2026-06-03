@@ -788,3 +788,46 @@ def alert_test() -> None:
 
 
 app.add_typer(alert_app, name="alert")
+
+
+# --- trace-cost command ---
+
+
+@app.command(name="trace-cost")
+def trace_cost_cmd(
+    trace_id: str = typer.Argument(..., help="OpenTelemetry trace ID"),
+) -> None:
+    """Show cost breakdown by agent in a trace."""
+    from cost_intel.otel import get_trace_cost
+
+    data = get_trace_cost(trace_id)
+    if not data["agents"]:
+        console.print(f"[yellow]No spans found for trace {trace_id}[/yellow]")
+        return
+
+    table = Table(title=f"Trace Cost: {trace_id}")
+    table.add_column("Agent", style="cyan")
+    table.add_column("Model", max_width=25)
+    table.add_column("Own Cost", justify="right")
+    table.add_column("Rolled Up", justify="right")
+    table.add_column("Input Tok", justify="right")
+    table.add_column("Output Tok", justify="right")
+    table.add_column("CPQP", justify="right")
+    for agent in data["agents"]:
+        indent = "  " * agent.get("depth", 0)
+        cpqp = agent.get("cpqp")
+        table.add_row(
+            f"{indent}{agent['label'] or ''}",
+            agent["model_id"] or "",
+            f"${agent['own_cost']:.4f}",
+            f"${agent['rolled_up_cost']:.4f}",
+            str(agent["input_tokens"]),
+            str(agent["output_tokens"]),
+            f"${cpqp:.4f}" if cpqp is not None else "N/A",
+        )
+    console.print(table)
+    console.print(
+        f"Total: [bold]${data['total_cost']:.4f}[/bold] "
+        f"across {data['total_runs']} span(s) "
+        f"({data['total_input_tokens']} in / {data['total_output_tokens']} out)"
+    )
