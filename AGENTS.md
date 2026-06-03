@@ -3,9 +3,10 @@
 ## Session Startup (MANDATORY)
 1. Read SOUL.md (in profile root)
 2. Read this file
-3. Read PHASE1_COMPLETE.md (in workspace root) — Phase 1 handoff doc
-4. Read plan.md (in workspace root) — Phase 2+ implementation plan
-5. Check Linear for active tasks (project: Cost Intelligence, ONI-43..ONI-71)
+3. Read SESSION_HANDOFF.md (in workspace root) — **start here for current state**
+4. Read PHASE1_COMPLETE.md (in workspace root) — Phase 1 details
+5. Read mission-phase2.md (in workspace root) — Phase 2 task specs
+6. Check Linear for active tasks (project: Cost Intelligence, ONI-43..ONI-71)
 
 ## Project Status (June 3 2026)
 **Phase 1 COMPLETE** — All 12 tasks done, 77 tests passing, pushed to GitHub.
@@ -53,37 +54,46 @@ workspace/cost-intel/
 ├── src/cost_intel/           # Source package
 │   ├── __init__.py           # __version__ = "0.1.0"
 │   ├── __main__.py           # Entry point
-│   ├── cli.py                # Typer app + sub-apps
+│   ├── cli.py                # Typer app + sub-apps (ALL Phase 1 commands)
 │   ├── config.py             # Config loader (reads ~/.cost-intel/config.yaml)
 │   ├── db.py                 # Connection manager + migration runner
 │   ├── migration_runner.py   # Numbered SQL migration runner
-│   ├── migrations/           # Numbered SQL files (001_initial.sql, 002_*, 003_*)
-│   ├── models.py             # Pydantic models
+│   ├── migrations/           # Numbered SQL files
+│   │   └── 001_initial.sql   # Phase 1 schema (COMPLETE)
 │   ├── pricing.py            # OpenRouter fetch + historical store
 │   ├── record.py             # Cost run recording (cache tokens + raw_response)
 │   ├── report.py             # Aggregate views + time-window filtering
 │   ├── budget.py             # Budget set/status subcommands
 │   ├── estimate.py           # tiktoken pre-call estimation
-│   ├── ingest.py             # JSONL ingestion with provider-specific cache extraction
-│   ├── quality.py            # Score import + CPQP + waste detection
-│   ├── optimize.py           # Model routing + target CPQP
-│   ├── compare.py            # Model comparison with efficiency delta
-│   ├── gate.py               # CI/CD cost gates
-│   ├── alerts.py             # Slack webhook + SMTP email alerts
-│   ├── otel.py               # OpenTelemetry span ingestion + trace cost
-│   ├── enforce.py            # Budget enforcement / hard-stop
-│   ├── prompt_optimize.py    # High-cost pattern analysis
+│   ├── ingest.py             # JSONL ingestion with provider cache extraction
 │   ├── duration.py           # parse_window("7d") → 7 (CANONICAL location)
 │   ├── utils.py              # Shared utilities (retry, now_iso)
-│   └── adapters/             # Quality score import adapters
+│   ├── quality.py            # [Phase 2] Score import + CPQP + waste detection
+│   ├── optimize.py           # [Phase 2] Model routing + target CPQP
+│   ├── compare.py            # [Phase 2] Model comparison with efficiency delta
+│   ├── trends.py             # [Phase 2] CPQP trend analysis
+│   ├── gate.py               # [Phase 3] CI/CD cost gates
+│   ├── alerts.py             # [Phase 3] Slack webhook + SMTP email alerts
+│   ├── otel.py               # [Phase 4] OpenTelemetry span ingestion + trace cost
+│   ├── enforce.py            # [Phase 4] Budget enforcement / hard-stop
+│   ├── prompt_opt.py         # [Phase 4] High-cost pattern analysis
+│   └── adapters/             # [Phase 2] Quality score import adapters
+│       ├── eval_harness.py   # [Phase 2] Eval Harness DB adapter
+│       └── braintrust.py     # [Phase 2] Braintrust API adapter
 ├── tests/
 │   ├── conftest.py           # Shared fixtures (tmp_db, tmp_cost_intel_home)
-│   ├── test_*.py             # Unit tests per module
-│   └── integration/          # Integration tests
+│   ├── test_*.py             # 10 test files, 77 tests (Phase 1 COMPLETE)
+│   └── integration/          # Integration tests (empty — Phase 2+)
 ├── pyproject.toml            # hatchling build, dependencies, ruff config
 ├── .env.example              # Required env vars (no real values)
-└── scripts/
-    └── bootstrap.sh          # One-command setup
+├── .github/workflows/ci.yml  # CI pipeline (ruff + pytest, Phase 1 COMPLETE)
+├── scripts/
+│   ├── bootstrap.sh          # One-command dev setup (executable)
+│   └── dogfood.sh            # Dogfood: ingest + report (executable)
+├── SESSION_HANDOFF.md        # **READ FIRST** — current state + next steps
+├── PHASE1_COMPLETE.md        # Phase 1 implementation details
+├── mission-phase2.md         # Factory Droid Phase 2 prompt
+└── plan.md                   # Full 4-phase plan (4297 lines, audit-approved)
 ```
 
 ## Database Conventions
