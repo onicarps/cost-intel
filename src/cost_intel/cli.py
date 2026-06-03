@@ -728,3 +728,63 @@ def budget_status() -> None:
 
 
 app.add_typer(budget_app, name="budget")
+
+
+# --- alert sub-app ---
+
+alert_app = typer.Typer(help="Budget alert dispatch (Slack webhook + SMTP email)")
+
+
+@alert_app.command("check")
+def alert_check() -> None:
+    """Check budget threshold and dispatch alerts when reached."""
+    from cost_intel.alerts import check_and_alert
+
+    result = check_and_alert()
+    if not result["triggered"]:
+        console.print("[green]✓[/green] Budget below alert threshold — no alert sent.")
+        return
+
+    if result["alert_sent"]:
+        console.print("[yellow]⚠[/yellow] Budget alert triggered and dispatched.")
+    else:
+        console.print(
+            "[red]⚠[/red] Budget alert triggered but no channel succeeded "
+            "(check slack_webhook_url / smtp_host config)."
+        )
+    console.print(result["message"])
+
+
+@alert_app.command("test")
+def alert_test() -> None:
+    """Show which alert channels are configured."""
+    from cost_intel.config import load_config
+
+    cfg = load_config()
+    slack_url = cfg.get("slack_webhook_url", "") or ""
+    smtp_host = cfg.get("smtp_host", "") or ""
+    recipients = cfg.get("alert_recipients", []) or []
+
+    table = Table(title="Alert Channels")
+    table.add_column("Channel", style="cyan")
+    table.add_column("Configured", justify="right")
+    table.add_column("Details")
+    table.add_row(
+        "Slack",
+        "[green]yes[/green]" if slack_url else "[red]no[/red]",
+        "(webhook set)" if slack_url else "(set slack_webhook_url in config)",
+    )
+    table.add_row(
+        "SMTP",
+        "[green]yes[/green]" if smtp_host else "[red]no[/red]",
+        smtp_host or "(set smtp_host in config)",
+    )
+    table.add_row(
+        "Recipients",
+        "[green]yes[/green]" if recipients else "[red]no[/red]",
+        f"{len(recipients)} recipient(s)",
+    )
+    console.print(table)
+
+
+app.add_typer(alert_app, name="alert")
