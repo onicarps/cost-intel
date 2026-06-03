@@ -870,3 +870,23 @@ def prompt_opt_cmd(
     else:
         for s in suggestions:
             console.print(f"  - {s['suggestion']}")
+
+
+@app.command(name="guard")
+def guard_cmd(
+    threshold: Optional[float] = typer.Option(
+        None,
+        "--threshold",
+        "-t",
+        help="Override alert threshold (0.0-1.0, e.g. 0.8 for 80%)",
+    ),
+) -> None:
+    """Budget enforcement guard. Returns non-zero exit if budget exceeded."""
+    from cost_intel.guard import check_guard
+
+    allowed, msg = check_guard(threshold_override=threshold)
+    if allowed:
+        console.print(f"[green]OK[/green] {msg}")
+    else:
+        console.print(f"[red]BLOCKED[/red] {msg}")
+    raise typer.Exit(code=0 if allowed else 1)
