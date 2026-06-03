@@ -157,9 +157,11 @@ Hermes is currently at the small scale. The OWL value prop ("unified cost-qualit
 
 ## Action Items
 
-1. [ ] Fix `* 1_000_000` bug in `refresh_all_pricing` — the comment is wrong, OpenRouter returns per-token pricing
-2. [ ] Add model name mapping/normalization layer
-3. [ ] Add pricing freshness tracking and alerts
-4. [ ] Add cost recomputation for historical data
-5. [ ] Add cost anomaly detection (alert when cost > Nσ for model)
-6. [ ] Determine pricing unit convention and make it consistent (per-1K vs per-1M vs per-token)
+1. [x] Fix `* 1_000_000` bug in `refresh_all_pricing` — Fixed in commit `6a12f43`. Changed `/ 1000` to `/ 1_000_000` and updated display label to `/1M`.
+2. [ ] Add model name mapping/normalization layer — Deferred (structural limitation, see §Structural Accuracy Limitation)
+3. [ ] Add pricing freshness tracking and alerts — Deferred
+4. [ ] Add cost recomputation for historical data — Deferred
+5. [ ] Add cost anomaly detection (alert when cost > Nσ for model) — Deferred
+6. [x] Determine pricing unit convention — Fixed to per-1M tokens throughout. Verified in commit `6a12f43`.
+
+_Note: items 2-5 are improvement ideas from dogfooding. The project is feature-complete per the 4-phase plan. These would be Phase 5+ work if AI spending scale justifies them._

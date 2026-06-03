@@ -36,3 +36,4 @@ Thumbs.db
 
 # Cost Intel data
 .cost-intel/
+.dogfood-data/

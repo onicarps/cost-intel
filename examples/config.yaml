@@ -1,0 +1,28 @@
+# Example cost-intel configuration
+# Copy to ~/.cost-intel/config.yaml and customize
+
+# Monthly budget in USD
+budget:
+  monthly: 500
+
+# Alert channels
+alerts:
+  # Slack incoming webhook URL (optional)
+  # Create one at: https://api.slack.com/messaging/webhooks
+  # slack_webhook_url: "https://hooks.slack.com/services/T00/B00/xxxx"
+
+  # SMTP email settings (optional)
+  # email:
+  #   smtp_host: "smtp.gmail.com"
+  #   smtp_port: 587
+  #   smtp_user: "you@example.com"
+  #   smtp_password: "app-password"
+  #   from: "alerts@example.com"
+  #   to: "you@example.com"
+
+# Quality score weights for combined_score computation
+quality:
+  weights:
+    accuracy: 0.5
+    relevance: 0.3
+    coherence: 0.2
