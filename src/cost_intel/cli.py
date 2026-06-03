@@ -340,6 +340,64 @@ def ingest_api_responses(
     console.print(f"[green]✓[/green] Ingested [bold]{count}[/bold] runs from {file}")
 
 
+# --- import command ---
+
+
+@app.command(name="import")
+def import_csv(
+    file: Path = typer.Argument(..., help="Path to CSV file (OpenRouter export)"),
+    format: Optional[str] = typer.Option(
+        None,
+        "--format",
+        "-f",
+        help="CSV format: 'per_call' or 'aggregated'. Auto-detected if not set.",
+    ),
+    source: Optional[str] = typer.Option(
+        None,
+        "--source",
+        "-s",
+        help="Source tag for imported runs (e.g., 'openrouter-export')",
+    ),
+    label: Optional[str] = typer.Option(
+        None,
+        "--label",
+        "-l",
+        help="Label applied to all imported runs",
+    ),
+    dry_run: bool = typer.Option(
+        False,
+        "--dry-run",
+        help="Preview import without writing to database",
+    ),
+) -> None:
+    """Import cost runs from a CSV file (e.g., OpenRouter activity export).
+
+    Auto-detects per-call vs aggregated format from CSV headers.
+    Per-call: timestamp, model, input_tokens, output_tokens, cost
+    Aggregated: Model, Min, Max, Avg, Sum
+    """
+    from cost_intel.ingest import ingest_csv
+
+    if dry_run:
+        console.print(f"[dim]Dry run — reading {file}[/dim]")
+        import csv
+
+        with open(file, newline="") as f:
+            reader = csv.DictReader(f)
+            if reader.fieldnames:
+                console.print(f"  Headers: {', '.join(reader.fieldnames)}")
+                rows = list(reader)
+                console.print(f"  Rows: {len(rows)}")
+                if rows:
+                    console.print(f"  First row: {rows[0]}")
+            else:
+                console.print("  [red]No headers found[/red]")
+        return
+
+    count = ingest_csv(str(file), format=format, source=source, label=label)
+    console.print(f"[green]✓[/green] Imported [bold]{count}[/bold] runs from {file}")
+
+
 # --- cpqp command ---
 
 
