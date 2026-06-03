@@ -42,17 +42,18 @@ def test_migration_002_creates_cpqp_view(tmp_cost_intel_home):
 
 
 def test_migration_002_version_is_two(tmp_cost_intel_home):
-    """After migrations, the schema version is 2."""
+    """After all migrations, the schema version is at least 2."""
     init_db()
-    assert get_current_version() == 2
+    assert get_current_version() >= 2
 
 
 def test_migrations_are_idempotent(tmp_cost_intel_home):
     """Re-running migrations is a no-op (does not fail or duplicate)."""
     init_db()
     apply_pending_migrations()
+    final = get_current_version()
     apply_pending_migrations()
-    assert get_current_version() == 2
+    assert get_current_version() == final
 
 
 def test_quality_scores_check_constraint(tmp_cost_intel_home):
@@ -87,6 +88,36 @@ def test_quality_scores_check_constraint(tmp_cost_intel_home):
         raised = True
     assert raised, "CHECK constraint did not reject combined_score=1.5"
     conn.close()
+
+
+def test_migration_003_adds_trace_columns(tmp_cost_intel_home):
+    """Migration 003 adds trace_id, span_id, parent_span_id to cost_runs."""
+    init_db()
+    conn = get_connection()
+    cols = conn.execute("PRAGMA table_info(cost_runs)").fetchall()
+    col_names = {r["name"] for r in cols}
+    assert "trace_id" in col_names
+    assert "span_id" in col_names
+    assert "parent_span_id" in col_names
+    conn.close()
+
+
+def test_migration_003_adds_indexes(tmp_cost_intel_home):
+    """Migration 003 creates trace_id and parent_span_id indexes."""
+    init_db()
+    conn = get_connection()
+    rows = conn.execute("SELECT name FROM sqlite_master WHERE type='index'").fetchall()
+    names = {r["name"] for r in rows}
+    assert "idx_cost_runs_trace_id" in names
+    assert "idx_cost_runs_parent_span" in names
+    conn.close()
+
+
+def test_migration_003_idempotent(tmp_cost_intel_home):
+    """Running init_db() twice does not fail and lands at version 3."""
+    init_db()
+    init_db()
+    assert get_current_version() == 3
 
 
 def test_cpqp_view_returns_rating_column(tmp_cost_intel_home):
