@@ -77,15 +77,30 @@ def test_trace_cost_rolls_up_parent_spans(tmp_cost_intel_home):
     init_db()
     set_manual_pricing("openai/gpt-4o", "openai", 2.5, 10.0)
     ingest_span(
-        "root", "trace-1", "orchestrator", "openai/gpt-4o", 100, 50,
+        "root",
+        "trace-1",
+        "orchestrator",
+        "openai/gpt-4o",
+        100,
+        50,
         parent_span_id=None,
     )
     ingest_span(
-        "child-1", "trace-1", "planner", "openai/gpt-4o", 200, 100,
+        "child-1",
+        "trace-1",
+        "planner",
+        "openai/gpt-4o",
+        200,
+        100,
         parent_span_id="root",
     )
     ingest_span(
-        "child-2", "trace-1", "executor", "openai/gpt-4o", 300, 150,
+        "child-2",
+        "trace-1",
+        "executor",
+        "openai/gpt-4o",
+        300,
+        150,
         parent_span_id="root",
     )
 
