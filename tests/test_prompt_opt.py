@@ -19,7 +19,7 @@ def test_analyze_prompt_patterns(tmp_cost_intel_home):
     assert len(results) > 0
     top = results[0]
     assert "summarize" in top["label_prefix"]
-    assert top["avg_cost"] > 10.0
+    assert top["avg_cost"] > 0.01
     assert top["total_runs"] == 5
     assert top["avg_input_tokens"] == 5000
     assert top["avg_output_tokens"] == 2000

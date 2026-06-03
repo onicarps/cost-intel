@@ -165,8 +165,9 @@ def get_pricing(model_id: str, as_of_date: Optional[str] = None) -> Optional[dic
 def refresh_all_pricing() -> int:
     """Refresh model pricing from OpenRouter API.
 
-    OpenRouter returns prices per-million tokens. We convert to
-    per-1K tokens by multiplying by 1_000_000 / 1_000 = 1_000.
+    OpenRouter returns per-token prices (e.g., 0.000000039 for $0.039/1M tokens).
+    We convert to per-1M-token prices for storage by multiplying by 1_000_000.
+    The stored values represent cost per 1M tokens (despite the column name).
 
     Returns:
         Number of models with pricing updated/inserted.

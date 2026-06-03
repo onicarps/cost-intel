@@ -40,8 +40,8 @@ def test_cpqp_division_by_zero_guard(tmp_cost_intel_home):
     run_id = record_run("openai/gpt-4o", 1000, 500)
     import_score(run_id, score=0.0, source="test")
     cpqp = get_cpqp(run_id)
-    # Cost=2.5 + 5.0 = 7.5; score=0 → uses 0.01 floor → CPQP=750.0
-    assert cpqp["cpqp"] == 750.0
+    # Cost=0.0025+0.005=0.0075; score=0 → uses 0.01 floor → CPQP=0.75
+    assert cpqp["cpqp"] == 0.75
 
 
 def test_compute_combined_score_equal_weights():

@@ -22,8 +22,8 @@ def test_compare_models_basic(tmp_cost_intel_home):
     assert len(results) == 2
     gpt = next(r for r in results if r["model_id"] == "openai/gpt-4o")
     claude = next(r for r in results if r["model_id"] == "anthropic/claude-sonnet-4")
-    assert abs(gpt["total_cost"] - 7.5) < 0.001
-    assert abs(claude["total_cost"] - 8.4) < 0.001
+    assert abs(gpt["total_cost"] - 0.0075) < 0.001
+    assert abs(claude["total_cost"] - 0.0084) < 0.001
 
 
 def test_compare_models_includes_cpqp_delta(tmp_cost_intel_home):

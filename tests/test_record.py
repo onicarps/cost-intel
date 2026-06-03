@@ -36,8 +36,9 @@ class TestRecordRun:
             "SELECT call_cost FROM cost_run_calls WHERE run_id = ?",
             (run_id,),
         ).fetchone()
-        # 1000/1000 * 30 + 500/1000 * 60 = 30 + 30 = 60
-        assert call["call_cost"] == 60.0
+        # Prices are per-1M tokens: 30/1M in, 60/1M out
+        # 1000/1_000_000 * 30 + 500/1_000_000 * 60 = 0.03 + 0.03 = 0.06
+        assert call["call_cost"] == 0.06
         conn.close()
 
     def test_unknown_model_gets_zero_cost(self, tmp_cost_intel_home):

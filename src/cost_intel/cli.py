@@ -292,8 +292,8 @@ def pricing_show(
     p = get_pricing(model)
     if p:
         console.print(
-            f"{model}: ${p['input_price_per_1k_tokens']}/1K in, "
-            f"${p['output_price_per_1k_tokens']}/1K out "
+            f"{model}: ${p['input_price_per_1k_tokens']}/1M in, "
+            f"${p['output_price_per_1k_tokens']}/1M out "
             f"(effective {p['effective_date']}, source: {p['source']})"
         )
     else:

@@ -133,7 +133,7 @@ def test_trace_cost_with_cpqp(tmp_cost_intel_home):
     cost = get_trace_cost("trace-1")
     agent_a = next(a for a in cost["agents"] if a["label"] == "agent-a")
     agent_b = next(a for a in cost["agents"] if a["label"] == "agent-b")
-    # agent-a: cost = 1*2.5 + 0.5*10 = 7.5; score=0.5 -> CPQP = 15.0
-    # agent-b: cost = 0.2*2.5 + 0.2*10 = 2.5; score=0.9 -> CPQP ≈ 2.7778
-    assert agent_a["cpqp"] == 15.0
-    assert abs(agent_b["cpqp"] - 2.7778) < 0.01
+    # agent-a: cost = 0.0025+0.005=0.0075; score=0.5 -> CPQP = 0.015
+    # agent-b: cost = 0.0005+0.002=0.0025; score=0.9 -> CPQP ≈ 0.00278
+    assert agent_a["cpqp"] == 0.015
+    assert abs(agent_b["cpqp"] - 0.00278) < 0.001

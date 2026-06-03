@@ -47,7 +47,7 @@ def estimate_cost(
     pricing = get_pricing(model)
 
     if pricing and tokens > 0:
-        cost = (tokens / 1000) * (pricing["input_price_per_1k_tokens"] or 0)
+        cost = (tokens / 1_000_000) * (pricing["input_price_per_1k_tokens"] or 0)
     else:
         cost = 0.0
 

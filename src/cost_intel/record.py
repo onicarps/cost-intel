@@ -32,10 +32,12 @@ def _compute_cost(
     pricing = get_pricing(model_id, as_of_date=as_of_date)
     if not pricing:
         return 0.0
-    ic = (input_tokens / 1000) * (pricing["input_price_per_1k_tokens"] or 0)
-    oc = (output_tokens / 1000) * (pricing["output_price_per_1k_tokens"] or 0)
-    crc = (cache_read_tokens / 1000) * (pricing["cache_read_price_per_1k_tokens"] or 0)
-    cwc = (cache_write_tokens / 1000) * (
+    ic = (input_tokens / 1_000_000) * (pricing["input_price_per_1k_tokens"] or 0)
+    oc = (output_tokens / 1_000_000) * (pricing["output_price_per_1k_tokens"] or 0)
+    crc = (cache_read_tokens / 1_000_000) * (
+        pricing["cache_read_price_per_1k_tokens"] or 0
+    )
+    cwc = (cache_write_tokens / 1_000_000) * (
         pricing["cache_write_price_per_1k_tokens"] or 0
     )
     return round(ic + oc + crc + cwc, 6)

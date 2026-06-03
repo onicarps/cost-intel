@@ -72,8 +72,8 @@ def test_get_waste_index_target_cpqp(tmp_cost_intel_home):
     """waste index with target_cpqp counts runs above the target."""
     init_db()
     upsert_pricing("openai/gpt-4o", "openai", 2.5, 10.0)
-    rid = record_run("openai/gpt-4o", 1000, 500, label="t")
-    import_score(rid, score=0.1, source="test")  # CPQP ~ 75
+    rid = record_run("openai/gpt-4o", 100_000, 50_000, label="t")
+    import_score(rid, score=0.1, source="test")  # CPQP ~ 0.75/0.1 = 7.5
     wi = get_waste_index(target_cpqp=1.0)
     assert wi["waste_spend"] > 0
 
@@ -81,7 +81,7 @@ def test_get_waste_index_target_cpqp(tmp_cost_intel_home):
 def test_get_runs_above_target_cpqp(tmp_cost_intel_home):
     init_db()
     upsert_pricing("openai/gpt-4o", "openai", 2.5, 10.0)
-    rid = record_run("openai/gpt-4o", 1000, 500, label="t")
+    rid = record_run("openai/gpt-4o", 100_000, 50_000, label="t")
     import_score(rid, score=0.1, source="test")
     runs = get_runs_above_target_cpqp(1.0)
     assert any(r["run_id"] == rid for r in runs)
@@ -100,7 +100,7 @@ def test_optimize_target_cpqp(tmp_cost_intel_home):
     """--target-cpqp must show runs exceeding the target."""
     init_db()
     upsert_pricing("openai/gpt-4o", "openai", 2.5, 10.0)
-    rid = record_run("openai/gpt-4o", 1000, 500, label="my-test-task")
+    rid = record_run("openai/gpt-4o", 100_000, 50_000, label="my-test-task")
     import_score(rid, score=0.1, source="test")
     result = runner.invoke(app, ["optimize", "--target-cpqp", "1.0"])
     assert result.exit_code == 0

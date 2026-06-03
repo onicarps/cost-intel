@@ -36,7 +36,7 @@ class TestReportSummary:
 
         summary = report_summary()
         assert summary["total_runs"] == 2
-        assert summary["total_cost"] == 60.0 + 120.0  # 30+30 + 60+60
+        assert summary["total_cost"] == 0.06 + 0.12  # 0.03+0.03 + 0.06+0.06
 
     def test_summary_with_time_window(self, tmp_cost_intel_home):
         """Summary filters by time window (days)."""
